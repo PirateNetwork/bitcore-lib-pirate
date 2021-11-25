@@ -1,7 +1,7 @@
 {
-  "name": "bitcore-lib-komodo",
+  "name": "bitcore-lib-pirate",
   "version": "0.13.19",
-  "description": "A pure and powerful JavaScript Komodo library.",
+  "description": "A pure and powerful JavaScript Pirate library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
@@ -61,7 +61,7 @@
     }
   ],
   "keywords": [
-    "komodo",
+    "pirate",
     "transaction",
     "address",
     "p2p",
@@ -78,7 +78,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://git@github.com/DeckerSU/bitcore-lib-komodo.git"
+    "url": "git+https://git@github.com/piratenetwork/bitcore-lib-pirate.git"
   },
   "browser": {
     "request": "browser-request"
@@ -92,7 +92,7 @@
     "lodash": "=3.10.1"
   },
   "devDependencies": {
-    "bitcore-build-komodo": "git+https://git@github.com/DeckerSU/bitcore-build-komodo",
+    "bitcore-build-pirate": "git+https://git@github.com/piratenetwork/bitcore-build-pirate",
     "brfs": "^1.2.0",
     "chai": "^1.10.0",
     "gulp": "^3.8.10",

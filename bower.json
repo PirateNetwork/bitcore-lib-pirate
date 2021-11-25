@@ -1,18 +1,18 @@
 {
-  "name": "bitcore-lib-komodo",
-  "main": "./bitcore-lib-komodo.min.js",
+  "name": "bitcore-lib-pirate",
+  "main": "./bitcore-lib-pirate.min.js",
   "version": "0.13.19",
   "homepage": "http://bitcore.io",
   "authors": [
     "BitPay, Inc.",
     "Jack Grigg"
   ],
-  "description": "A pure, powerful core for your komodo project.",
+  "description": "A pure, powerful core for your pirate project.",
   "moduleType": [
     "globals"
   ],
   "keywords": [
-    "komodo",
+    "pirate",
     "bitcore",
     "btc",
     "satoshi"

@@ -7,16 +7,24 @@ var PrivateKey = bitcore.PrivateKey;
 
 describe('PublicKeyInput', function() {
 
+  // address/scriptPubKey below are derived together from privateKey two
+  // lines down (a fresh testnet key under this fork's real network
+  // prefixes - see lib/networks.js): address = privateKey.toAddress(),
+  // scriptPubKey = P2PK output paying privateKey.toPublicKey(). The
+  // original upstream Bitcoin fixture had an unrelated Bitcoin-testnet
+  // WIF/address/scriptPubKey trio that no longer decodes under this
+  // fork's real prefixes, and whose scriptPubKey pubkey didn't match its
+  // own privateKey to begin with.
   var utxo = {
     txid: '7f3b688cb224ed83e12d9454145c26ac913687086a0a62f2ae0bc10934a4030f',
     vout: 0,
-    address: 'n4McBrSkw42eYGX5YMACGpkGUJKL3jVSbo',
-    scriptPubKey: '2103c9594cb2ebfebcb0cfd29eacd40ba012606a197beef76f0269ed8c101e56ceddac',
+    address: '1NxC45s5q1PiKFVjAxpTpXre2ZisNVLcFV',
+    scriptPubKey: '2103574f14b2938567d23d48ede193b08a26cc48be88ffabf0d55ad0ba66209da6a2ac',
     amount: 50,
     confirmations: 104,
     spendable: true
   };
-  var privateKey = PrivateKey.fromWIF('cQ7tSSQDEwaxg9usnnP1Aztqvm9nCQVfNWz9kU2rdocDjknF2vd6');
+  var privateKey = PrivateKey.fromWIF('Ky67dqs3JxVUHZ7BLJ8JZbkNPANmdPmvUMSX21Qx88sYRNurSh5h');
   var address = privateKey.toAddress();
   utxo.address.should.equal(address.toString());
 

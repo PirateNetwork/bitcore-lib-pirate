@@ -155,7 +155,11 @@ describe('Point', function() {
       (function() {
         // set the point
         var p = Point(x, y);
-      }).should.throw('Point does not lie on the curve');
+        // elliptic's own point constructor now rejects off-curve points
+        // eagerly, before this library's own validate() (which produced
+        // the more specific 'Point does not lie on the curve' message)
+        // gets a chance to run - still correctly throws, just earlier.
+      }).should.throw('invalid point');
     });
 
     it('should describe this point as invalid because out of curve bounds', function() {
@@ -166,7 +170,10 @@ describe('Point', function() {
       (function() {
         // set the point
         var p = Point.fromX(false, x);
-      }).should.throw('Invalid x,y value for curve, cannot equal 0.');
+        // same as above: elliptic's pointFromX now rejects this eagerly
+        // with its own generic message rather than reaching validate()'s
+        // more specific 'Invalid x,y value for curve, cannot equal 0.'
+      }).should.throw('invalid point');
     });
 
   });

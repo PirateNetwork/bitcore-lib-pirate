@@ -8,9 +8,13 @@ describe('#versionGuard', function() {
     should.equal(global._bitcore, bitcore.version);
   });
 
-  it('throw an error if version is already defined', function() {
+  // The actual throw in index.js's versionGuard() is currently commented
+  // out ("put this back if we start versioning again"), so this only
+  // checks the guard doesn't error out on its own, not that it enforces
+  // anything yet.
+  it('does not throw while version enforcement is disabled', function() {
     (function() {
       bitcore.versionGuard('version');
-    }).should.throw('More than one instance of bitcore');
+    }).should.not.throw();
   });
 });

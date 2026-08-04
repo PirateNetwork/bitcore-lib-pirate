@@ -184,9 +184,15 @@ describe('Output', function() {
       satoshis: 1000,
       script: new Script()
     });
+    // 'bad' happens to be valid (if odd-length) hex - Buffer construction
+    // silently truncates rather than throwing, so it no longer exercises
+    // this path. An object isn't a Buffer or a hex string, so BufferReader
+    // ends up with an undefined internal buffer and throws a plain
+    // TypeError - not a Script.InvalidBuffer - which is what this test
+    // wants to confirm propagates instead of being swallowed.
     (function() {
-      output.setScriptFromBuffer('bad');
-    }).should.throw('Invalid hex string');
+      output.setScriptFromBuffer({});
+    }).should.throw(TypeError);
   });
 
 });

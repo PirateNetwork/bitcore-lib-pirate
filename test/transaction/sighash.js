@@ -9,6 +9,17 @@ var Script = bitcore.Script;
 var Transaction = bitcore.Transaction;
 var sighash = Transaction.sighash;
 
+// test/data/sighash.json is a small set of self-built vectors, not real
+// chain data. It replaces the original upstream Bitcoin bitcore-lib
+// fixture (Bitcoin Core's fuzz-generated sighash test vectors), which
+// don't work here: this fork's transaction parser reads the high bit of
+// a fuzzed version field as the Overwintered flag and then expects
+// nVersionGroupId/nConsensusBranchId fields the fuzz data doesn't have,
+// throwing outright rather than producing a wrong-but-parseable result.
+// The replacement vectors are generated (and their expected sighash
+// values computed) via this library's own Transaction/sighash code
+// against hand-built, well-formed transactions, covering each SIGHASH_*
+// type (plus ANYONECANPAY) across two input indices.
 var vectors_sighash = require('../data/sighash.json');
 
 describe('sighash', function() {
@@ -18,7 +29,7 @@ describe('sighash', function() {
       // First element is just a row describing the next ones
       return;
     }
-    it('test vector from bitcoind #' + i + ' (' + vector[4].substring(0, 16) + ')', function() {
+    it('sighash test vector #' + i + ' (' + vector[4].substring(0, 16) + ')', function() {
       var txbuf = new buffer.Buffer(vector[0], 'hex');
       var scriptbuf = new buffer.Buffer(vector[1], 'hex');
       var subscript = Script(scriptbuf);

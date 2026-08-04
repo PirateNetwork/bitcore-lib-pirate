@@ -3,19 +3,93 @@
 var should = require('chai').should();
 
 var bitcore = require('../..');
+var BlockHeader = bitcore.BlockHeader;
 var MerkleBlock = bitcore.MerkleBlock;
 var BufferReader = bitcore.encoding.BufferReader;
 var BufferWriter = bitcore.encoding.BufferWriter;
 var Transaction = bitcore.Transaction;
-var data = require('../data/merkleblocks.js');
+var Hash = bitcore.crypto.Hash;
 var transactionVector = require('../data/tx_creation');
 
+// None of the fixtures below are from a real Pirate (or Bitcoin) block.
+// They're hand-built partial merkle trees (BIP37-style hashes+flags,
+// verified by construction against a real, well-formed BlockHeader) used
+// purely to exercise validMerkleTree()/hasTransaction() round-trips. This
+// suite was adapted from the upstream Bitcoin bitcore-lib test vectors,
+// which embedded a real Bitcoin mainnet merkleblock that doesn't fit this
+// fork's actual header format at all, and no real Pirate chain data was
+// available when this suite was adapted.
+
+function makeTx(outputIndex) {
+  return new Transaction().fromObject({
+    version: 1,
+    inputs: [{
+      prevTxId: '0000000000000000000000000000000000000000000000000000000000000000',
+      outputIndex: outputIndex,
+      sequenceNumber: 4294967295,
+      script: '04ffff001d0104'
+    }],
+    outputs: [{
+      satoshis: 5000000000,
+      script: '410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c' +
+        '52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac'
+    }],
+    nLockTime: 0
+  });
+}
+
+function pairHash(a, b) {
+  return Hash.sha256sha256(Buffer.concat([a, b]));
+}
+
+function makeHeader(merkleRoot, salt) {
+  return new BlockHeader({
+    version: 4,
+    prevHash: new Buffer(32).fill(salt),
+    merkleRoot: merkleRoot,
+    reserved: new Buffer(32).fill(0),
+    time: 1600000000,
+    bits: 0x200fffff,
+    nonce: new Buffer(32).fill(0),
+    solution: new Buffer(40).fill(salt)
+  });
+}
+
+// A 2-transaction tree where both leaves match (are "of interest"): a
+// single root-level flag bit, then one flag bit per leaf, all set.
+var tx0 = makeTx(0);
+var tx1 = makeTx(1);
+var hash0 = tx0._getHash();
+var hash1 = tx1._getHash();
+var merkleRoot2 = pairHash(hash0, hash1);
+var header2 = makeHeader(merkleRoot2, 0x11);
+var merkleBlock2 = {
+  header: header2.toObject(),
+  numTransactions: 2,
+  hashes: [hash0.toString('hex'), hash1.toString('hex')],
+  flags: [0x07] // bits: root=1, leaf0=1, leaf1=1
+};
+
+// A 4-transaction tree where every leaf matches, exercising a taller
+// (height 2) tree.
+var txs4 = [0, 1, 2, 3].map(makeTx);
+var hashes4 = txs4.map(function(tx) { return tx._getHash(); });
+var level1 = [pairHash(hashes4[0], hashes4[1]), pairHash(hashes4[2], hashes4[3])];
+var merkleRoot4 = pairHash(level1[0], level1[1]);
+var header4 = makeHeader(merkleRoot4, 0x22);
+var merkleBlock4 = {
+  header: header4.toObject(),
+  numTransactions: 4,
+  hashes: hashes4.map(function(h) { return h.toString('hex'); }),
+  // visit order: root, left-subtree, leaf0, leaf1, right-subtree, leaf2, leaf3 - all matches
+  flags: [0x7f]
+};
 
 describe('MerkleBlock', function() {
-  var blockhex  = data.HEX[0];
-  var blockbuf  = new Buffer(blockhex,'hex');
-  var blockJSON = JSON.stringify(data.JSON[0]);
-  var blockObject = JSON.parse(JSON.stringify(data.JSON[0]));
+  var blockhex = new MerkleBlock(merkleBlock2).toBuffer().toString('hex');
+  var blockbuf = new Buffer(blockhex, 'hex');
+  var blockJSON = JSON.stringify(merkleBlock2);
+  var blockObject = JSON.parse(JSON.stringify(merkleBlock2));
 
   describe('#constructor', function() {
     it('should make a new merkleblock from buffer', function() {
@@ -60,7 +134,7 @@ describe('MerkleBlock', function() {
 
     it('accepts an object as argument', function() {
       var block = MerkleBlock(blockbuf);
-      MerkleBlock.fromObject(block.toObject()).should.exist();
+      MerkleBlock.fromObject(block.toObject()).should.exist;
     });
 
   });
@@ -128,17 +202,17 @@ describe('MerkleBlock', function() {
   describe('#validMerkleTree', function() {
 
     it('should validate good merkleblocks', function() {
-      data.JSON.forEach(function(data) {
+      [merkleBlock2, merkleBlock4].forEach(function(data) {
         var b = MerkleBlock(data);
         b.validMerkleTree().should.equal(true);
       });
     });
 
     it('should not validate merkleblocks with too many hashes', function() {
-      var b = MerkleBlock(data.JSON[0]);
+      var b = MerkleBlock(blockObject);
       // Add too many hashes
       var i = 0;
-      while(i <= b.numTransactions) {
+      while (i <= b.numTransactions) {
         b.hashes.push('bad' + i++);
       }
       b.validMerkleTree().should.equal(false);
@@ -155,46 +229,38 @@ describe('MerkleBlock', function() {
   describe('#hasTransaction', function() {
 
     it('should find transactions via hash string', function() {
-      var jsonData = data.JSON[0];
-      var txId = new Buffer(jsonData.hashes[1],'hex').toString('hex');
-      var b = MerkleBlock(jsonData);
+      var b = MerkleBlock(blockObject);
+      var txId = hash1.toString('hex');
       b.hasTransaction(txId).should.equal(true);
       b.hasTransaction(txId + 'abcd').should.equal(false);
     });
 
     it('should find transactions via Transaction object', function() {
-      var jsonData = data.JSON[0];
-      var txBuf = new Buffer(data.TXHEX[0][0],'hex');
-      var tx = new Transaction().fromBuffer(txBuf);
-      var b = MerkleBlock(jsonData);
-      b.hasTransaction(tx).should.equal(true);
+      var b = MerkleBlock(blockObject);
+      b.hasTransaction(tx1).should.equal(true);
     });
 
     it('should not find non-existant Transaction object', function() {
       // Reuse another transaction already in data/ dir
       var serialized = transactionVector[0][7];
       var tx = new Transaction().fromBuffer(new Buffer(serialized, 'hex'));
-      var b = MerkleBlock(data.JSON[0]);
+      var b = MerkleBlock(blockObject);
       b.hasTransaction(tx).should.equal(false);
     });
 
-    it('should not match with merkle nodes', function() {
-      var b = MerkleBlock(data.JSON[0]);
-
+    it('should not match with unrelated hashes', function() {
+      var b = MerkleBlock(blockObject);
       var hashData = [
-        ['3612262624047ee87660be1a707519a443b1c1ce3d248cbfc6c15870f6c5daa2', false],
-        ['019f5b01d4195ecbc9398fbf3c3b1fa9bb3183301d7a1fb3bd174fcfa40a2b65', true],
-        ['41ed70551dd7e841883ab8f0b16bf04176b7d1480e4f0af9f3d4c3595768d068', false],
-        ['20d2a7bc994987302e5b1ac80fc425fe25f8b63169ea78e68fbaaefa59379bbf', false]
+        [hash1.toString('hex'), true],
+        ['00'.repeat(32), false],
+        ['ff'.repeat(32), false],
+        [hash1.toString('hex').replace(/^../, 'ab'), false]
       ];
-
-      hashData.forEach(function check(d){
+      hashData.forEach(function check(d) {
         b.hasTransaction(d[0]).should.equal(d[1]);
       });
-
     });
 
   });
 
 });
-

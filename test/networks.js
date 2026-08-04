@@ -17,19 +17,16 @@ describe('Networks', function() {
 
   it('will enable/disable regtest Network', function() {
     networks.enableRegtest();
-    networks.testnet.networkMagic.should.deep.equal(new Buffer('fabfb5da', 'hex'));
+    networks.testnet.networkMagic.should.deep.equal(new Buffer('aae83f5f', 'hex'));
     networks.testnet.port.should.equal(18444);
     networks.testnet.dnsSeeds.should.deep.equal([]);
     networks.testnet.regtestEnabled.should.equal(true);
 
     networks.disableRegtest();
-    networks.testnet.networkMagic.should.deep.equal(new Buffer('0b110907', 'hex'));
-    networks.testnet.port.should.equal(18333);
+    networks.testnet.networkMagic.should.deep.equal(new Buffer('fa1af9bf', 'hex'));
+    networks.testnet.port.should.equal(18233);
     networks.testnet.dnsSeeds.should.deep.equal([
-      'testnet-seed.bitcoin.petertodd.org',
-      'testnet-seed.bluematt.me',
-      'testnet-seed.alexykot.me',
-      'testnet-seed.bitcoin.schildbach.de'
+      'dnsseed.testnet.z.cash'
     ]);
   });
 
@@ -102,14 +99,14 @@ describe('Networks', function() {
   });
 
   it('tests only for the specified key', function() {
-    expect(networks.get(0x6f, 'pubkeyhash')).to.equal(networks.testnet);
-    expect(networks.get(0x6f, 'privatekey')).to.equal(undefined);
+    expect(networks.get(0, 'pubkeyhash')).to.equal(networks.testnet);
+    expect(networks.get(0, 'privatekey')).to.equal(undefined);
   });
 
   it('can test for multiple keys', function() {
-    expect(networks.get(0x6f, ['pubkeyhash', 'scripthash'])).to.equal(networks.testnet);
-    expect(networks.get(0xc4, ['pubkeyhash', 'scripthash'])).to.equal(networks.testnet);
-    expect(networks.get(0x6f, ['privatekey', 'port'])).to.equal(undefined);
+    expect(networks.get(0, ['pubkeyhash', 'scripthash'])).to.equal(networks.testnet);
+    expect(networks.get(5, ['pubkeyhash', 'scripthash'])).to.equal(networks.testnet);
+    expect(networks.get(0, ['privatekey', 'port'])).to.equal(undefined);
   });
 
   it('converts to string using the "name" property', function() {

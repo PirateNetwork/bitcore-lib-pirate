@@ -33,8 +33,12 @@ describe('PublicKey', function() {
 
     it('errors if a point not on the secp256k1 curve is provided', function() {
       (function() {
+        // elliptic's own point constructor now rejects this eagerly with
+        // its own generic message before PublicKey's constructor (or
+        // Point's own validate(), which would say 'Invalid y value for
+        // curve.') ever runs.
         return new PublicKey(new Point(1000, 1000));
-      }).should.throw('Invalid y value for curve.');
+      }).should.throw('invalid point');
     });
 
     it('errors if the argument is of an unrecognized type', function() {
@@ -337,13 +341,13 @@ describe('PublicKey', function() {
     it('should output this known mainnet address correctly', function() {
       var pk = new PublicKey('03c87bd0e162f26969da8509cafcb7b8c8d202af30b928c582e263dd13ee9a9781');
       var address = pk.toAddress('livenet');
-      address.toString().should.equal('1A6ut1tWnUq1SEQLMr4ttDh24wcbJ5o9TT');
+      address.toString().should.equal('RJP6xXmoPJdaWEmXq241yk2DqD5C1BPCW7');
     });
 
     it('should output this known testnet address correctly', function() {
       var pk = new PublicKey('0293126ccc927c111b88a0fe09baa0eca719e2a3e087e8a5d1059163f5c566feef');
       var address = pk.toAddress('testnet');
-      address.toString().should.equal('mtX8nPZZdJ8d3QNLRJ1oJTiEi26Sj6LQXS');
+      address.toString().should.equal('1E1BVLUapGhNGHtihj3RUYVur2Vjn6bA2m');
     });
 
   });
@@ -351,7 +355,16 @@ describe('PublicKey', function() {
   describe('hashes', function() {
 
     // wif private key, address
-    // see: https://github.com/bitcoin/bitcoin/blob/master/src/test/key_tests.cpp#L20
+    // WIFs are the Bitcoin Core key_tests.cpp vectors (see:
+    // https://github.com/bitcoin/bitcoin/blob/master/src/test/key_tests.cpp#L20).
+    // Their version byte (0x80) matches this fork's testnet privatekey
+    // prefix (not livenet's, which is 0xbc), so they decode as testnet
+    // keys here; and this fork's testnet pubkeyhash prefix (0) is
+    // deliberately identical to Bitcoin's own mainnet byte (see
+    // CTestNetParams::base58Prefixes in src/chainparams.cpp), so the
+    // resulting addresses happen to be byte-for-byte the same strings as
+    // the upstream Bitcoin mainnet test vectors - not a coincidence to
+    // "fix", just how the two networks' prefixes happen to line up.
     var data = [
       ['5HxWvvfubhXpYYpS3tJkw6fq9jE9j18THftkZjHHfmFiWtmAbrj', '1QFqqMUD55ZV3PJEJZtaKCsQmjLT6JkjvJ'],
       ['5KC4ejrDjv152FGwP386VD1i2NYc5KkfSMyv1nGy1VGDxGHqVY3', '1F5y5E5FMc5YzdJtB9hLaUe43GDxEKXENJ'],
